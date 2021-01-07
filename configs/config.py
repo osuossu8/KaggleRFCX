@@ -3,15 +3,13 @@ import sys
 
 sys.path.append("/root/workspace/KaggleRFCX")
 
-
 INPUT_DIR = 'inputs'
-FEATURE_DIR = 'features'
 OUT_DIR = 'models'
-TRAIN_PATH = os.path.join(INPUT_DIR, "train.csv")
-TEST_PATH = os.path.join(INPUT_DIR, "example_test.csv")
-LECTURE_PATH = os.path.join(INPUT_DIR, "lectures.csv")
-QUESTION_PATH = os.path.join(INPUT_DIR, "questions.csv")
-SUBMISSION_PATH = os.path.join(INPUT_DIR, "example_sample_submission.csv")
+TRAIN_IMG_PATH = os.path.join(INPUT_DIR, "train")
+TEST_IMG_PATH = os.path.join(INPUT_DIR, "train")
+TRAIN_FP_PATH = os.path.join(INPUT_DIR, "train_fp.csv")
+TRAIN_TP_PATH = os.path.join(INPUT_DIR, "train_tp.csv")
+SUBMISSION_PATH = os.path.join(INPUT_DIR, "sample_submission.csv")
 
 SEED = 6718
 
