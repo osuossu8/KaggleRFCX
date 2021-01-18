@@ -3,8 +3,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from functools import partial
 from torchlibrosa.stft import Spectrogram, LogmelFilterBank
 from torchlibrosa.augmentation import SpecAugmentation
+
+import timm
+from timm.models.efficientnet import tf_efficientnet_b0_ns
 
 
 def init_layer(layer):

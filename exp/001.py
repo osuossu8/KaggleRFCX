@@ -13,7 +13,6 @@ from tqdm import tqdm
 tqdm.pandas()
 
 sys.path.append("/root/workspace/KaggleRFCX")
-import riiideducation
 from configs import config as CFG
 from src.machine_learning_util import timer, seed_everything, to_pickle, unpickle
 

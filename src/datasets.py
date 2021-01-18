@@ -70,13 +70,13 @@ class SedDatasetV2:
             if self.wave_form_mix_up_ratio:
                 if np.random.random() > 0.5:
                     # do mixup    
-                    if idx < len_df//2:
+                    if idx < self.len_df//2:
                         rand_idx = np.random.randint(idx, self.len_df//2)
                     else:
                         rand_idx = np.random.randint(self.len_df//2, self.len_df)
-                    record2 = df.iloc[rand_idx]
+                    record2 = self.df.iloc[rand_idx]
                     y2, sr2 = sf.read(f"{self.data_path}/{record2['recording_id']}.flac")
-                    y2, label2 = crop_or_pad(y2, sr2, period=period, record=record2, mode=self.mode)
+                    y2, label2 = crop_or_pad(y2, sr2, period=self.period, record=record2, mode=self.mode)
                     
                     y = y * self.wave_form_mix_up_ratio + y2 * (1- self.wave_form_mix_up_ratio)
                     label = label * self.wave_form_mix_up_ratio + label2 * (1- self.wave_form_mix_up_ratio)

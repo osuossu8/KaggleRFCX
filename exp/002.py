@@ -36,7 +36,7 @@ from src.losses import PANNsLoss
 
 
 def main(fold):
-    seed_everithing(args.seed)
+    seed_everything(args.seed)
 
     args.fold = fold
     args.save_path = os.path.join(args.output_dir, args.exp_name)
@@ -186,17 +186,17 @@ class args:
     }
     wave_form_mix_up_ratio = 0.9
     period = 10
-    seed = 42
+    seed = CFG.SEED
     start_epcoh = 0 
     epochs = 50
     lr = 1e-3
     batch_size = 16
-    num_workers = 4
+    num_workers = 0
     early_stop = 15
     step_scheduler = True
     epoch_scheduler = False
 
-    device = ('cuda' if torch.cuda.is_available() else 'cpu')
+    device = CFG.DEVICE
     train_csv = CFG.TRAIN_FOLDS_PATH
     train_noisy_csv = CFG.TRAIN_FOLDS_NOISY_PATH
     sub_csv = CFG.SUBMISSION_PATH
@@ -228,17 +228,17 @@ class args:
     }
     wave_form_mix_up_ratio = 0.9
     period = 10
-    seed = 42
+    seed = CFG.SEED
     start_epcoh = 0 
     epochs = 50
     lr = 1e-3
     batch_size = 16
-    num_workers = 4
+    num_workers = 0
     early_stop = 15
     step_scheduler = True
     epoch_scheduler = False
 
-    device = ('cuda' if torch.cuda.is_available() else 'cpu')
+    device = CFG.DEVICE
     train_csv = CFG.TRAIN_FOLDS_PATH
     train_noisy_csv = CFG.TRAIN_FOLDS_NOISY_PATH
     sub_csv = CFG.SUBMISSION_PATH
