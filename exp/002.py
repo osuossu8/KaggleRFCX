@@ -205,8 +205,8 @@ class args:
     test_data_path = CFG.TEST_IMG_PATH
 
 
-with trace('pretraining fold 0'):
-    use_fold = 0
+use_fold = 1 # 0
+with trace(f'pretraining fold {use_fold}'):
     main(fold=use_fold)
 
 
@@ -247,7 +247,7 @@ class args:
     test_data_path = CFG.TEST_IMG_PATH
 
 
-with trace('finetune fold 0'):
+with trace(f'finetune fold {use_fold}'):
     main(fold=use_fold)
 
 
