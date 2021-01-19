@@ -194,7 +194,7 @@ class args:
     lr = 1e-3
     batch_size = 16
     num_workers = 0
-    early_stop = 15
+    early_stop = 5 # 15
     step_scheduler = True
     epoch_scheduler = False
 
@@ -207,10 +207,12 @@ class args:
     test_data_path = CFG.TEST_IMG_PATH
 
 
-for use_fold in range(5):
-    with trace(f'finetune fold {use_fold}'):
-        args.pretrain_weights = f"best_weights/SED_E0_5F_BASE/fold-{use_fold}.bin"
-        print(args.pretrain_weights)
-        main(fold=use_fold)
+# for use_fold in range(1, 5):
+use_fold = 4
+
+with trace(f'finetune fold {use_fold}'):
+    args.pretrain_weights = f"best_weights/SED_E0_5F_BASE/fold-{use_fold}.bin"
+    print(args.pretrain_weights)
+    main(fold=use_fold)
 
 
