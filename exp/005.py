@@ -50,7 +50,7 @@ def pseudo_labeling(fold):
     args.save_path = os.path.join(args.output_dir, args.exp_name)
     os.makedirs(args.save_path, exist_ok=True)
         
-    sub_df = pd.read_csv(args.sub_csv).head(100)
+    sub_df = pd.read_csv(args.sub_csv)
 
     test_dataset = SedDatasetTest(
         df = sub_df,
