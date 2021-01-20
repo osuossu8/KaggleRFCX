@@ -98,3 +98,49 @@ class SedDatasetV2:
             "target" : label,
             "id" : record['recording_id']
         }
+
+
+class SedDatasetTest:
+    def __init__(self, df, period=10, stride=5,
+                 audio_transform=None,
+                 wave_form_mix_up_ratio=None,
+                 tta=5,
+                 data_path="train", mode="train"):
+
+        self.period = period
+        self.stride = stride
+        self.audio_transform = audio_transform
+        self.wave_form_mix_up_ratio = wave_form_mix_up_ratio
+        self.data_path = data_path
+        self.mode = mode
+        self.tta = tta
+
+        self.df = df.groupby("recording_id").agg(lambda x: list(x)).reset_index()
+        self.len_df = len(self.df)
+
+    def __len__(self):
+        return self.len_df * self.tta
+
+    def __getitem__(self, idx):
+        new_idx = idx % self.len_df
+        # record = self.df.iloc[idx]
+        record = self.df.iloc[new_idx]
+
+        y, sr = sf.read(f"{self.data_path}/{record['recording_id']}.flac")
+
+        if self.audio_transform:
+            if np.random.random() > 0.5:
+                y = self.audio_transform(samples=y, sample_rate=sr)
+
+        y_ = []
+        i = 0
+        effective_length = self.period * sr
+        stride = self.stride * sr
+        y = np.stack([y[i:i+effective_length].astype(np.float32) for i in range(0, 60*sr+stride-effective_length, stride)])
+        label = np.zeros(24, dtype='f')
+
+        return {
+            "image" : y,
+            "target" : label,
+            "id" : record['recording_id']
+        }
