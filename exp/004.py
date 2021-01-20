@@ -74,15 +74,15 @@ def inference(fold):
     print(np.array(test_pred).shape)
  
     tmp = pd.DataFrame()
-    tmp['ids'] = ids
+    tmp['recording_id'] = ids
     tmp[target_cols] = test_pred
-    test_pred = tmp.groupby('ids')[target_cols].mean()
+    test_pred_df = tmp.groupby('recording_id')[target_cols].mean().reset_index()
 
-    test_pred_df = pd.DataFrame({
-        "recording_id" : sub_df.recording_id.values
-    })
-    test_pred_df[target_cols] = test_pred
     test_pred_df.to_csv(os.path.join(args.save_path, f"fold-{args.fold}-submission.csv"), index=False)
+
+    print(test_pred_df.shape)
+    print(test_pred_df.head())
+
     print(os.path.join(args.save_path, f"fold-{args.fold}-submission.csv"))
 
 
