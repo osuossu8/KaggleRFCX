@@ -54,6 +54,8 @@ def main(fold):
         train_df = pd.read_csv(args.train_noisy_csv)
     else:
         train_df = pd.read_csv(args.train_csv)
+
+    train_df['species_id'] = train_df['pseudo_species_id'].copy()
         
     sub_df = pd.read_csv(args.sub_csv)
     if args.DEBUG:
