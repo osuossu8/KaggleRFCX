@@ -76,7 +76,7 @@ def pseudo_labeling(fold):
     model.load_state_dict(torch.load(os.path.join(args.pretrain_weights), map_location=args.device))
     model = model.to(args.device)
 
-    target_cols = sub_df.columns[1:].values.tolist()
+    target_cols = [f"s{i}" for i in range(24)] # sub_df.columns[1:].values.tolist()
     test_pred, ids = test_epoch(args, model, test_loader)
     print(np.array(test_pred).shape)
 
@@ -84,20 +84,19 @@ def pseudo_labeling(fold):
  
     tmp = pd.DataFrame()
     tmp['recording_id'] = ids
-    tmp['pseudo_species_id'] = np.argmax(test_pred, 1)
-    test_pred_df = tmp.groupby('recording_id')['pseudo_species_id'].mean().reset_index()
+    tmp[target_cols] = test_pred
+    test_pred_df = tmp.groupby('recording_id')[target_cols].mean().reset_index()
+    test_pred_df['pseudo_species_id'] = np.argmax(test_pred_df[target_cols].values, 1)
 
     sub_df['pseudo_species_id'] = test_pred_df['pseudo_species_id'].copy().astype(np.int16)
 
     false_species_id_dict = sub_df.groupby('recording_id')['species_id'].apply(list).to_dict()
-
     def postprocessing(row):
         l = false_species_id_dict[row['recording_id']]
         if row['pseudo_species_id'] in l:
             return row['species_id']
         else:
             return row['pseudo_species_id']
-
     sub_df['pseudo_species_id'] = sub_df.apply(postprocessing, axis=1)
 
     # fp の species_id は誤りなので予測結果が fp に一致したものは使用しない
