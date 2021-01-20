@@ -139,7 +139,7 @@ class args:
     early_stop = 5 # 15
     step_scheduler = True
     epoch_scheduler = False
-    num_tta = 10
+    num_tta = 5 
 
     device = CFG.DEVICE
     train_csv = CFG.TRAIN_FOLDS_PATH
