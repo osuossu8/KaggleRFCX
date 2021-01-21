@@ -169,10 +169,16 @@ def main(fold):
     test_pred, ids = test_epoch(args, model, test_loader)
     print(np.array(test_pred).shape)
 
-    test_pred_df = pd.DataFrame({
-        "recording_id" : sub_df.recording_id.values
-    })
-    test_pred_df[target_cols] = test_pred
+    #test_pred_df = pd.DataFrame({
+    #    "recording_id" : sub_df.recording_id.values
+    #})
+    #test_pred_df[target_cols] = test_pred
+
+    tmp = pd.DataFrame()
+    tmp['recording_id'] = ids
+    tmp[target_cols] = test_pred
+    test_pred_df = tmp.groupby('recording_id')[target_cols].mean().reset_index()
+
     test_pred_df.to_csv(os.path.join(args.save_path, f"fold-{args.fold}-submission.csv"), index=False)
     print(os.path.join(args.save_path, f"fold-{args.fold}-submission.csv"))
 
