@@ -207,7 +207,7 @@ class args:
     lr = 1e-3
     batch_size = 16
     num_workers = 0
-    early_stop = 15
+    early_stop = 10 # 15
     step_scheduler = True
     epoch_scheduler = False
     num_tta = 10
