@@ -31,7 +31,7 @@ from configs import config as CFG
 from src.machine_learning_util import trace, seed_everything, to_pickle, unpickle
 from src.competition_util import AudioSEDModel
 from src.augmentations import train_audio_transform
-from src.datasets import SedDatasetV2
+from src.datasets import SedDatasetV2, SedDatasetTest
 from src.engine import train_epoch, valid_epoch, test_epoch
 from src.losses import PANNsLoss
 
@@ -208,7 +208,7 @@ def main(fold):
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=args.batch_size,
+        batch_size=args.batch_size//2,
         shuffle=False,
         drop_last=False,
         num_workers=args.num_workers
@@ -284,12 +284,12 @@ class args:
     pretrain_weights = None
     model_param = {
         'encoder' : 'tf_efficientnet_b0_ns',
-        'sample_rate': 48000,
+        'sample_rate': 32000, # 48000,
         'window_size' : 512 * 2,
         'hop_size' : 345 * 2,
-        'mel_bins' : 64 * 3, # 128,
+        'mel_bins' : 128,
         'fmin' : 20,
-        'fmax' : 48000 // 2,
+        'fmax' : 32000 // 2,
         'classes_num' : 24
     }
     wave_form_mix_up_ratio = None
@@ -327,12 +327,12 @@ class args:
     pretrain_weights = None
     model_param = {
         'encoder' : 'tf_efficientnet_b0_ns',
-        'sample_rate': 48000,
+        'sample_rate': 32000, # 48000,
         'window_size' : 512 * 2, # 512 * 2
         'hop_size' : 345 * 2, # 320
-        'mel_bins' : 64 * 3, # 128
+        'mel_bins' : 128,
         'fmin' : 20,
-        'fmax' : 48000 // 2,
+        'fmax' : 32000 // 2,
         'classes_num' : 24
     }
     wave_form_mix_up_ratio = 0.9
@@ -346,7 +346,7 @@ class args:
     early_stop = 10
     step_scheduler = True
     epoch_scheduler = False
-    num_tta = 10
+    num_tta = 5
 
     device = CFG.DEVICE
     train_csv = CFG.TRAIN_FOLDS_PATH
@@ -362,3 +362,4 @@ for use_fold in range(5):
         args.pretrain_weights = f"pretrainings/EXP010/fold-{use_fold}.bin"
         print(args.pretrain_weights)
         main(fold=use_fold)
+
