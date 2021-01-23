@@ -226,8 +226,8 @@ def main(fold):
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     num_train_steps = int(len(train_loader) * args.epochs)
     num_warmup_steps = int(0.1 * args.epochs * len(train_loader))
-    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_train_steps)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
+    # scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_train_steps)
 
     best_lwlrap = -np.inf
     early_stop_count = 0
@@ -297,11 +297,11 @@ class args:
     period = 10
     seed = CFG.SEED
     start_epcoh = 0 
-    epochs = 50
+    epochs = 10 # 50
     lr = 1e-3
     batch_size = 16
     num_workers = 0
-    early_stop = 10
+    early_stop = 5
     step_scheduler = True
     epoch_scheduler = False
     num_tta = 5
