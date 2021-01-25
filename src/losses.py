@@ -46,6 +46,6 @@ class BFLoss(nn.Module):
         target = target.float()
 
         bce_loss = self.bce(input_, target)
-        probas = torch.sigmoid(input_)
-        loss = torch.where(target >= 0.5, (1. - probas)**self.gamma * bce_loss, probas**self.gamma * bce_loss)
-        return loss.mean()
+        # probas = torch.sigmoid(input_)
+        # loss = torch.where(target >= 0.5, (1. - probas)**self.gamma * bce_loss, probas**self.gamma * bce_loss)
+        return bce_loss.mean() # loss.mean()

@@ -124,7 +124,7 @@ def main(fold):
         model.load_state_dict(torch.load(args.pretrain_weights, map_location=args.device), strict=False)
         model = model.to(args.device)
 
-    criterion = BFLoss() # PANNsLoss() #BCEWithLogitsLoss() #MaskedBCEWithLogitsLoss() #BCEWithLogitsLoss()
+    criterion = PANNsLoss() #BCEWithLogitsLoss() #MaskedBCEWithLogitsLoss() #BCEWithLogitsLoss()
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     num_train_steps = int(len(train_loader) * args.epochs)
     num_warmup_steps = int(0.1 * args.epochs * len(train_loader))
