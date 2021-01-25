@@ -37,9 +37,9 @@ from src.losses import PANNsLoss, BFLoss
 
 
 train_audio_transform_v2 = AA.Compose([
-    # AA.AddGaussianSNR(p=0.5),
-    AA.PitchShift(min_semitones=-0.3, max_semitones=0.3, p=0.5),
-    AA.Gain(p=0.5)
+    AA.AddGaussianSNR(p=0.5),
+    AA.PitchShift(min_semitones=-0.3, max_semitones=0.3, p=0.1),
+    AA.Gain(p=0.2)
 ])
 
 
@@ -52,6 +52,10 @@ def main(fold):
 
     train_df = pd.read_csv(args.train_csv)
     train_additional_df = pd.read_csv(args.train_additional_csv)
+
+    train_additional_df = train_additional_df.drop_duplicates()
+    # print(train_additional_df.shape)
+    # print(train_additional_df.drop_duplicates().shape)
 
     sub_df = pd.read_csv(args.sub_csv)
     if args.DEBUG:
