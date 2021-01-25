@@ -392,7 +392,7 @@ class args:
     period = 10
     seed = CFG.SEED
     start_epcoh = 0 
-    epochs = 2 # 55
+    epochs = 55
     lr = 1e-3
     batch_size = 16
     num_workers = 0
@@ -433,7 +433,7 @@ class args:
     period = 10
     seed = CFG.SEED
     start_epcoh = 0
-    epochs = 2 # 55
+    epochs = 55
     lr = 1e-3
     batch_size = 16
     num_workers = 0
@@ -475,7 +475,7 @@ class args:
     period = 10
     seed = CFG.SEED
     start_epcoh = 0 
-    epochs = 2 # 55
+    epochs = 55
     lr = 1e-3
     batch_size = 16
     num_workers = 0
