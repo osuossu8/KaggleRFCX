@@ -50,7 +50,7 @@ def pretraining(fold):
     args.save_path = os.path.join(args.output_dir, args.exp_name)
     os.makedirs(args.save_path, exist_ok=True)
 
-    train_df = pd.read_csv(args.train_noisy_csv)
+    train_df = pd.read_csv(args.train_csv)
     train_additional_df = pd.read_csv(args.train_additional_csv)
 
     sub_df = pd.read_csv(args.sub_csv)
@@ -150,7 +150,7 @@ def pretraining_2nd(fold):
     args.save_path = os.path.join(args.output_dir, args.exp_name)
     os.makedirs(args.save_path, exist_ok=True)
 
-    train_df = pd.read_csv(args.train_noisy_csv)
+    train_df = pd.read_csv(args.train_csv)
     train_additional_df = pd.read_csv(args.train_additional_csv)
 
     sub_df = pd.read_csv(args.sub_csv)
@@ -392,7 +392,7 @@ class args:
     period = 10
     seed = CFG.SEED
     start_epcoh = 0 
-    epochs = 55
+    epochs = 2 # 55
     lr = 1e-3
     batch_size = 16
     num_workers = 0
@@ -433,7 +433,7 @@ class args:
     period = 10
     seed = CFG.SEED
     start_epcoh = 0
-    epochs = 55
+    epochs = 2 # 55
     lr = 1e-3
     batch_size = 16
     num_workers = 0
@@ -475,7 +475,7 @@ class args:
     period = 10
     seed = CFG.SEED
     start_epcoh = 0 
-    epochs = 55
+    epochs = 2 # 55
     lr = 1e-3
     batch_size = 16
     num_workers = 0
