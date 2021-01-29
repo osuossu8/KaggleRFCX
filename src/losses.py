@@ -27,7 +27,7 @@ class PANNsLoss(nn.Module):
         return self.bce(input_, target)
 
 
-class BFLoss(nn.Module):
+class FocalLoss(nn.Module):
     def __init__(self):
         super().__init__()
 
@@ -35,7 +35,8 @@ class BFLoss(nn.Module):
         self.gamma = 2
 
     def forward(self, input, target):
-        input_ = input["clipwise_output"]
+        # input_ = input["clipwise_output"]
+        input_ = input["logit"]
         input_ = torch.where(torch.isnan(input_),
                              torch.zeros_like(input_),
                              input_)
@@ -46,6 +47,6 @@ class BFLoss(nn.Module):
         target = target.float()
 
         bce_loss = self.bce(input_, target)
-        # probas = torch.sigmoid(input_)
-        # loss = torch.where(target >= 0.5, (1. - probas)**self.gamma * bce_loss, probas**self.gamma * bce_loss)
-        return bce_loss.mean() # loss.mean()
+        probas = torch.sigmoid(input_)
+        loss = torch.where(target >= 0.5, (1. - probas)**self.gamma * bce_loss, probas**self.gamma * bce_loss)
+        return loss.mean()
