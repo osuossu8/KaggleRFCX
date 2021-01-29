@@ -60,7 +60,7 @@ def main(fold):
     train_dataset = SedDatasetV2(
         df = train_fold,
         period=args.period,
-        audio_transform=None, # train_audio_transform_v2,
+        audio_transform=train_audio_transform_v2,
         wave_form_mix_up_ratio=args.wave_form_mix_up_ratio,
         data_path=args.train_data_path,
         mode="train"
@@ -182,13 +182,13 @@ class args:
         'encoder' : 'tf_efficientnet_b0_ns',
         'sample_rate': 48000,
         'window_size' : 512 * 2, # 512 * 2
-        'hop_size' : 345 * 2, # 320
+        'hop_size' : 400 * 2, # 345 * 2, # 320
         'mel_bins' : 128,
         'fmin' : 20,
         'fmax' : 48000 // 2,
         'classes_num' : 24
     }
-    wave_form_mix_up_ratio = None # 0.9
+    wave_form_mix_up_ratio = 0.9
     period = 10
     seed = CFG.SEED
     start_epcoh = 0 
@@ -196,7 +196,7 @@ class args:
     lr = 1e-3
     batch_size = 16
     num_workers = 0
-    early_stop = 10
+    early_stop = 12
     step_scheduler = True
     epoch_scheduler = False
     num_tta = 5
@@ -212,7 +212,7 @@ class args:
 
 for use_fold in range(5):
     with trace(f'finetune fold {use_fold}'):
-        args.pretrain_weights = f"weights/EXP022/fold-{use_fold}.bin"
+        # args.pretrain_weights = f"weights/EXP022/fold-{use_fold}.bin"
         print(args.pretrain_weights)
         main(fold=use_fold)
 
