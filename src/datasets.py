@@ -142,7 +142,8 @@ class SedDatasetV3:
                     y2, sr2 = sf.read(f"{self.data_path}/{record2['recording_id']}.flac")
                     y2, label2 = crop_or_pad(y2, sr2, period=self.period, record=record2, mode=self.mode)
                     
-                    y = normalize(y) * self.wave_form_mix_up_ratio + normalize(y2) * (1- self.wave_form_mix_up_ratio)
+                    y = normalize(y.reshape(-1, 1)) * self.wave_form_mix_up_ratio + normalize(y2.reshape(-1, 1)) * (1- self.wave_form_mix_up_ratio)
+                    y = np.squeeze(y)
                     label = label * self.wave_form_mix_up_ratio + label2 * (1- self.wave_form_mix_up_ratio)
                 else:
                     pass
