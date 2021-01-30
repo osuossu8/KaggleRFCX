@@ -31,13 +31,14 @@ from configs import config as CFG
 from src.machine_learning_util import trace, seed_everything, to_pickle, unpickle
 from src.competition_util import AudioSEDModel
 from src.augmentations import train_audio_transform
-from src.datasets import SedDatasetV2, SedDatasetTest
+from src.datasets import SedDatasetV2, SedDatasetV3, SedDatasetTest
 from src.engine import train_epoch, valid_epoch, test_epoch
-from src.losses import PANNsLoss, FocalLoss
+from src.losses import PANNsLoss, FocalLoss, PANNsWithFocalLoss
 
 
 train_audio_transform_v2 = AA.Compose([
     AA.AddGaussianSNR(p=0.5),
+    AA.PitchShift(min_semitones=-0.5, max_semitones=0.5, p=0.1),
     AA.Gain(p=0.2)
 ])
 
@@ -57,7 +58,7 @@ def main(fold):
     train_fold = train_df[train_df.kfold != fold]
     valid_fold = train_df[train_df.kfold == fold]
 
-    train_dataset = SedDatasetV2(
+    train_dataset = SedDatasetV3(
         df = train_fold,
         period=args.period,
         audio_transform=train_audio_transform_v2,
@@ -66,7 +67,7 @@ def main(fold):
         mode="train"
     )
 
-    valid_dataset = SedDatasetV2(
+    valid_dataset = SedDatasetV3(
         df = valid_fold,
         period=args.period,
         stride=5,
@@ -105,7 +106,7 @@ def main(fold):
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=args.batch_size,
+        batch_size=args.batch_size//2,
         shuffle=False,
         drop_last=False,
         num_workers=args.num_workers
@@ -119,7 +120,7 @@ def main(fold):
         model.load_state_dict(torch.load(args.pretrain_weights, map_location=args.device), strict=False)
         model = model.to(args.device)
 
-    criterion = FocalLoss() # PANNsLoss() #BCEWithLogitsLoss() #MaskedBCEWithLogitsLoss() #BCEWithLogitsLoss()
+    criterion = PANNsWithFocalLoss() # FocalLoss() # PANNsLoss() #BCEWithLogitsLoss() #MaskedBCEWithLogitsLoss() #BCEWithLogitsLoss()
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     num_train_steps = int(len(train_loader) * args.epochs)
     num_warmup_steps = int(0.1 * args.epochs * len(train_loader))
@@ -181,14 +182,14 @@ class args:
     model_param = {
         'encoder' : 'tf_efficientnet_b0_ns',
         'sample_rate': 48000,
-        'window_size' : 512 * 2, # 512 * 2
-        'hop_size' : 400 * 2, # 345 * 2, # 320
-        'mel_bins' : 128,
+        'window_size' : 512 * 4, # 512 * 2
+        'hop_size' : 345 * 2, # 320
+        'mel_bins' : 224, # 128,
         'fmin' : 20,
         'fmax' : 48000 // 2,
         'classes_num' : 24
     }
-    wave_form_mix_up_ratio = 0.9
+    wave_form_mix_up_ratio = 0.8 # 0.9
     period = 10
     seed = CFG.SEED
     start_epcoh = 0 
@@ -196,7 +197,7 @@ class args:
     lr = 1e-3
     batch_size = 16
     num_workers = 0
-    early_stop = 12
+    early_stop = 10
     step_scheduler = True
     epoch_scheduler = False
     num_tta = 5
