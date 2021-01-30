@@ -1,6 +1,6 @@
 import numpy as np
 import soundfile as sf
-import sklearn.preprocessing.normalize
+from sklearn.preprocessing import normalize
 
 
 def crop_or_pad(y, sr, period, record, mode="train"):
