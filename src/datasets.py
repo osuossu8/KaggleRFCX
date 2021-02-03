@@ -165,6 +165,73 @@ class SedDatasetV3:
         }
 
 
+class SedDatasetV4:
+    def __init__(self, df, period=10, stride=5, 
+                 audio_transform=None, 
+                 wave_form_mix_up_ratio=None,
+                 data_path="train", mode="train"):
+
+        self.period = period
+        self.stride = stride
+        self.audio_transform = audio_transform
+        self.wave_form_mix_up_ratio = wave_form_mix_up_ratio
+        self.data_path = data_path
+        self.mode = mode
+
+        self.df = df.groupby("recording_id").agg(lambda x: list(x)).reset_index()
+        self.len_df = len(self.df)
+
+    def __len__(self):
+        return self.len_df
+    
+    def __getitem__(self, idx):
+        record = self.df.iloc[idx]
+
+        y, sr = sf.read(f"{self.data_path}/{record['recording_id']}.flac")
+        
+        if self.mode != "test":
+            y, label = crop_or_pad(y, sr, period=self.period, record=record, mode=self.mode)
+
+            if self.audio_transform:
+                y = self.audio_transform(samples=y, sample_rate=sr)
+                
+            if self.wave_form_mix_up_ratio:
+                if np.random.random() > 0.5 and label[4] == 0 and label[22] == 0:
+                    # do mixup    
+                    if idx < self.len_df//2:
+                        rand_idx = np.random.randint(idx, self.len_df//2)
+                    else:
+                        rand_idx = np.random.randint(self.len_df//2, self.len_df)
+                    record2 = self.df.iloc[rand_idx]
+                    y2, sr2 = sf.read(f"{self.data_path}/{record2['recording_id']}.flac")
+                    y2, label2 = crop_or_pad(y2, sr2, period=self.period, record=record2, mode=self.mode)
+                    
+                    if label2[4] == 0 and label2[22] == 0:
+                        y = normalize(y.reshape(-1, 1)) * self.wave_form_mix_up_ratio + normalize(y2.reshape(-1, 1)) * (1- self.wave_form_mix_up_ratio)
+                        y = np.squeeze(y)
+                        label = label * self.wave_form_mix_up_ratio + label2 * (1- self.wave_form_mix_up_ratio)
+                    else:
+                        pass
+                else:
+                    pass
+        else:
+            y_ = []
+            i = 0
+            effective_length = self.period * sr
+            stride = self.stride * sr
+            y = np.stack([y[i:i+effective_length].astype(np.float32) for i in range(0, 60*sr+stride-effective_length, stride)])
+            label = np.zeros(24, dtype='f')
+            if self.mode == "valid":
+                for i in record['species_id']:
+                    label[i] = 1
+        
+        return {
+            "image" : y,
+            "target" : label,
+            "id" : record['recording_id']
+        }
+
+
 class SedDatasetTest:
     def __init__(self, df, period=10, stride=5,
                  audio_transform=None,
