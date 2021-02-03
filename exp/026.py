@@ -312,9 +312,9 @@ class args:
     test_data_path = CFG.TEST_IMG_PATH
 
 
-for use_fold in range(5):
-    with trace(f'pretrain fold {use_fold}'):
-        pretraining(fold=use_fold)
+# for use_fold in range(5):
+#     with trace(f'pretrain fold {use_fold}'):
+#         pretraining(fold=use_fold)
     
 
 class args:
@@ -327,12 +327,12 @@ class args:
         'sample_rate': 48000,
         'window_size' : 512 * 2,
         'hop_size' : 345 * 2,
-        'mel_bins' : 128,
-        'fmin' : 350, # 20,
-        'fmax' : 18000, # 20000, # 48000 // 2,
+        'mel_bins' : 144, # 128,
+        'fmin' : 350,
+        'fmax' : 16000, # 18000, # 48000 // 2,
         'classes_num' : 24
     }
-    wave_form_mix_up_ratio = 0.9
+    wave_form_mix_up_ratio = 0.6 # 0.9
     period = 10
     seed = CFG.SEED
     start_epcoh = 0 
@@ -356,7 +356,7 @@ class args:
 
 for use_fold in range(5):
     with trace(f'finetune fold {use_fold}'):
-        args.pretrain_weights = f"pretrainings/EXP026/fold-{use_fold}.bin"
-        print(args.pretrain_weights)
+        # args.pretrain_weights = f"pretrainings/EXP026/fold-{use_fold}.bin"
+        # print(args.pretrain_weights)
         main(fold=use_fold)
 
