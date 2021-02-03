@@ -27,6 +27,33 @@ class PANNsLoss(nn.Module):
         return self.bce(input_, target)
 
 
+class ClassWeightedPANNsLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.bce = nn.BCELoss(reduction='none')
+
+        self.weights = torch.tensor([0.04, 0.04, 0.02, 0.07, 0.04, 0.04,
+                                     0.04, 0.04, 0.04, 0.04, 0.04, 0.04,
+                                     0.04, 0.04, 0.04, 0.04, 0.04, 0.04,
+                                     0.06, 0.02, 0.04, 0.07, 0.04, 0.04]).cuda()
+
+    def forward(self, input, target):
+        input_ = input["clipwise_output"]
+        input_ = torch.where(torch.isnan(input_),
+                             torch.zeros_like(input_),
+                             input_)
+        input_ = torch.where(torch.isinf(input_),
+                             torch.zeros_like(input_),
+                             input_)
+
+        target = target.float()
+
+        loss = self.bce(input_, target)
+
+        return (loss * self.weights).mean()
+
+
 class FocalLoss(nn.Module):
     def __init__(self):
         super().__init__()
