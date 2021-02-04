@@ -150,6 +150,36 @@ def valid_epoch(args, model, loader, criterion, epoch):
     return scores.avg, losses.avg
 
 
+def valid_epoch_v2(args, model, loader, criterion, epoch):
+    losses = AverageMeter()
+    scores = MetricMeter()
+    model.eval()
+    with torch.no_grad():
+        t = tqdm(loader)
+        for i, sample in enumerate(t):
+            o = {}
+            input = sample['image'].to(args.device)
+            bs, seq, w = input.shape
+            input = input.reshape(bs*seq, w)
+            target = sample['target'].to(args.device)
+            output = model(input)
+
+            tmp = torch.sigmoid(torch.max(output['framewise_output'], dim=1)[0])
+            tmp = tmp.reshape(bs, seq, -1)
+            tmp, _ = torch.max(tmp, dim=1)
+            o['clipwise_output'] = tmp
+            
+            loss = criterion(o, target)    
+            # loss = criterion(output, target)
+
+            bs = input.size(0)
+            scores.update(target, tmp)
+            losses.update(loss.item(), bs)
+            t.set_description(f"Valid E:{epoch} - Loss:{losses.avg:0.4f}")
+    t.close()
+    return scores.avg, losses.avg
+
+
 def test_epoch(args, model, loader):
     model.eval()
     pred_list = []

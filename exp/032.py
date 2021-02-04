@@ -31,9 +31,9 @@ from configs import config as CFG
 from src.machine_learning_util import trace, seed_everything, to_pickle, unpickle
 from src.competition_util import AudioSEDModel, AudioSEDShortModel
 from src.augmentations import train_audio_transform
-from src.datasets import SedDatasetV2, SedDatasetV3, SedDatasetV5, SedDatasetTest
-from src.engine import train_epoch, valid_epoch, test_epoch
-from src.losses import PANNsLoss, FocalLoss, PANNsWithFocalLoss, ClassWeightedPANNsLoss
+from src.datasets import SedDatasetV2, SedDatasetV3, SedDatasetV3Mk2, SedDatasetTest
+from src.engine import train_epoch, valid_epoch, test_epoch, valid_epoch_v2
+from src.losses import PANNsLoss, FocalLoss, PANNsWithFocalLoss
 
 
 train_audio_transform_v2 = AA.Compose([
@@ -54,7 +54,7 @@ def main(fold):
     train_fold = train_df[train_df.kfold != fold]
     valid_fold = train_df[train_df.kfold == fold]
 
-    train_dataset = SedDatasetV3(
+    train_dataset = SedDatasetV3Mk2(
         df = train_fold,
         period=args.period,
         audio_transform=train_audio_transform_v2,
@@ -63,10 +63,10 @@ def main(fold):
         mode="train"
     )
 
-    valid_dataset = SedDatasetV3(
+    valid_dataset = SedDatasetV3Mk2(
         df = valid_fold,
         period=args.period,
-        stride=5,
+        stride=args.stride,
         audio_transform=None,
         wave_form_mix_up_ratio=None,
         data_path=args.train_data_path,
@@ -76,7 +76,7 @@ def main(fold):
     test_dataset = SedDatasetTest(
         df = sub_df,
         period=args.period,
-        stride=5,
+        stride=args.stride,
         data_path=args.test_data_path
     )
 
@@ -123,7 +123,8 @@ def main(fold):
 
     for epoch in range(args.start_epcoh, args.epochs):
         train_avg, train_loss = train_epoch(args, model, train_loader, criterion, optimizer, scheduler, epoch)
-        valid_avg, valid_loss = valid_epoch(args, model, valid_loader, criterion, epoch)
+        # valid_avg, valid_loss = valid_epoch(args, model, valid_loader, criterion, epoch)
+        valid_avg, valid_loss = valid_epoch_v2(args, model, valid_loader, criterion, epoch)
 
         if args.epoch_scheduler:
             scheduler.step()
@@ -182,6 +183,7 @@ class args:
     }
     wave_form_mix_up_ratio = 0.9
     period = 3
+    stride = 3
     seed = CFG.SEED
     start_epcoh = 0 
     epochs = 55
