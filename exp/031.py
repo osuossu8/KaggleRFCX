@@ -77,8 +77,7 @@ def main(fold):
         df = sub_df,
         period=args.period,
         stride=args.stride,
-        data_path=args.test_data_path,
-        mode="test"
+        data_path=args.test_data_path
     )
 
     train_loader = torch.utils.data.DataLoader(
@@ -99,7 +98,7 @@ def main(fold):
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=args.batch_size//8,
+        batch_size=args.batch_size//2,
         shuffle=False,
         drop_last=False,
         num_workers=args.num_workers
@@ -175,15 +174,15 @@ class args:
         'encoder' : 'tf_efficientnet_b0_ns',
         'sample_rate': 48000,
         'window_size' : 512 * 2,
-        'hop_size' : 170 * 2, # 345 * 2,
+        'hop_size' : 345 * 2,
         'mel_bins' : 144, # 128,
         'fmin' : 350,
         'fmax' : 16000,
         'classes_num' : 24
     }
     wave_form_mix_up_ratio = 0.9
-    period = 1
-    stride = 1
+    period = 3
+    stride = 3
     seed = CFG.SEED
     start_epcoh = 0 
     epochs = 55
