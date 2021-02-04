@@ -170,7 +170,7 @@ def main(fold):
     valid_dataset = SedDatasetV3(
         df = valid_fold,
         period=args.period,
-        stride=5,
+        stride=args.stride,
         audio_transform=None,
         wave_form_mix_up_ratio=None,
         data_path=args.train_data_path,
@@ -180,7 +180,7 @@ def main(fold):
     test_dataset = SedDatasetTest(
         df = sub_df,
         period=args.period,
-        stride=5,
+        stride=args.stride,
         audio_transform=train_audio_transform_v2, 
         wave_form_mix_up_ratio=None,
         tta=args.num_tta,
@@ -206,7 +206,7 @@ def main(fold):
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=args.batch_size//2,
+        batch_size=args.batch_size//8,
         shuffle=False,
         drop_last=False,
         num_workers=args.num_workers
@@ -284,7 +284,7 @@ class args:
         'encoder' : 'tf_efficientnet_b0_ns',
         'sample_rate': 48000,
         'window_size' : 512 * 2,
-        'hop_size' : 345 * 2,
+        'hop_size' : 34 * 2, # 345 * 2,
         'mel_bins' : 144, # 128,
         'fmin' : 350,
         'fmax' : 16000,
@@ -292,6 +292,7 @@ class args:
     }
     wave_form_mix_up_ratio = 0.9
     period = 1 # 10
+    stride = 1
     seed = CFG.SEED
     start_epcoh = 0 
     epochs = 55
@@ -301,7 +302,7 @@ class args:
     early_stop = 10
     step_scheduler = True
     epoch_scheduler = False
-    num_tta = 5
+    num_tta = 3 # 5
 
     device = CFG.DEVICE
     train_csv = CFG.TRAIN_FOLDS_PATH
