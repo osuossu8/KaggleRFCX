@@ -29,7 +29,7 @@ tqdm.pandas()
 sys.path.append("/root/workspace/KaggleRFCX")
 from configs import config as CFG
 from src.machine_learning_util import trace, seed_everything, to_pickle, unpickle
-from src.competition_util import AudioSEDModel
+from src.competition_util import AudioSEDModel, AudioSEDShortModel
 from src.augmentations import train_audio_transform
 from src.datasets import SedDatasetV2, SedDatasetV3, SedDatasetV5, SedDatasetTest
 from src.engine import train_epoch, valid_epoch, test_epoch
@@ -95,7 +95,7 @@ def pretraining(fold):
         num_workers=args.num_workers
     )
 
-    model = AudioSEDModel(**args.model_param)
+    model = AudioSEDShortModel(**args.model_param)
     model = model.to(args.device)
 
     if args.pretrain_weights:
@@ -212,7 +212,7 @@ def main(fold):
         num_workers=args.num_workers
     )
 
-    model = AudioSEDModel(**args.model_param)
+    model = AudioSEDShortModel(**args.model_param)
     model = model.to(args.device)
 
     if args.pretrain_weights:
@@ -285,55 +285,13 @@ class args:
         'sample_rate': 48000,
         'window_size' : 512 * 2,
         'hop_size' : 345 * 2,
-        'mel_bins' : 128,
-        'fmin' : 350, # 20,
-        'fmax' : 18000, # 20000, # 48000 // 2,
-        'classes_num' : 24
-    }
-    wave_form_mix_up_ratio = None # 0.9
-    period = 1 # 10
-    seed = CFG.SEED
-    start_epcoh = 0
-    epochs = 20 # 55
-    lr = 1e-3
-    batch_size = 16
-    num_workers = 0
-    early_stop = 10
-    step_scheduler = True
-    epoch_scheduler = False
-    num_tta = 5
-
-    device = CFG.DEVICE
-    train_csv = CFG.TRAIN_FOLDS_PATH
-    train_additional_csv = CFG.TRAIN_FOLDS_NOISY_PATH
-    sub_csv = CFG.SUBMISSION_PATH
-    output_dir = "pretrainings"
-    train_data_path = CFG.TRAIN_IMG_PATH
-    test_data_path = CFG.TEST_IMG_PATH
-
-
-# for use_fold in range(5):
-#     with trace(f'pretrain fold {use_fold}'):
-#         pretraining(fold=use_fold)
-    
-
-class args:
-    DEBUG = False
-
-    exp_name = "EXP030"
-    pretrain_weights = None
-    model_param = {
-        'encoder' : 'tf_efficientnet_b0_ns',
-        'sample_rate': 48000,
-        'window_size' : 512 * 2,
-        'hop_size' : 345 * 2,
         'mel_bins' : 144, # 128,
         'fmin' : 350,
-        'fmax' : 16000, # 18000, # 48000 // 2,
+        'fmax' : 16000,
         'classes_num' : 24
     }
     wave_form_mix_up_ratio = 0.9
-    period = 10
+    period = 1 # 10
     seed = CFG.SEED
     start_epcoh = 0 
     epochs = 55
