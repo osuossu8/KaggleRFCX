@@ -284,7 +284,7 @@ class args:
     stride = 10
     seed = CFG.SEED
     start_epcoh = 0
-    epochs = 1 # 50
+    epochs = 50
     lr = 1e-3
     batch_size = 16
     num_workers = 0
@@ -302,8 +302,9 @@ class args:
     test_data_path = CFG.TEST_IMG_PATH
 
 
-with trace(f'pretraining fold {use_fold}'):
-    pretraining(fold=use_fold)
+for use_fold in range(5):
+    with trace(f'pretraining fold {use_fold}'):
+        pretraining(fold=use_fold)
 
 
 class args:
@@ -324,7 +325,7 @@ class args:
     stride = 10
     seed = CFG.SEED
     start_epcoh = 0 
-    epochs = 1 # 55
+    epochs = 55
     lr = 1e-3
     batch_size = 16
     num_workers = 0
