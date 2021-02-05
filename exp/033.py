@@ -31,15 +31,13 @@ from configs import config as CFG
 from src.machine_learning_util import trace, seed_everything, to_pickle, unpickle
 from src.competition_util import AudioSEDModel, AudioSEDShortModel
 from src.augmentations import train_audio_transform
-from src.datasets import SedDatasetV2, SedDatasetV3, SedDatasetV5, SedDatasetTest, SedDatasetTestWithTTA:
+from src.datasets import SedDatasetV2, SedDatasetV3, SedDatasetV5, SedDatasetTest, SedDatasetTestWithTTA
 from src.engine import train_epoch, valid_epoch, test_epoch
 from src.losses import PANNsLoss, FocalLoss, PANNsWithFocalLoss, ClassWeightedPANNsLoss
 
 
 train_audio_transform_v2 = AA.Compose([
-    AA.AddGaussianSNR(p=0.5),
-    AA.PitchShift(min_semitones=-0.4, max_semitones=0.4, p=0.3),
-    AA.Gain(p=0.3)
+    AA.AddGaussianSNR(p=0.5)
 ])
 
 
@@ -180,7 +178,7 @@ class args:
         'sample_rate': 48000,
         'window_size' : 512 * 2,
         'hop_size' : 345 * 2,
-        'mel_bins' : 169, # 144,
+        'mel_bins' : 128,
         'fmin' : 350,
         'fmax' : 16000,
         'classes_num' : 24
@@ -190,13 +188,14 @@ class args:
     stride = 10
     seed = CFG.SEED
     start_epcoh = 0 
-    epochs = 2 # 55
+    epochs = 55
     lr = 1e-3
     batch_size = 16
     num_workers = 0
     early_stop = 10
     step_scheduler = True
     epoch_scheduler = False
+    num_tta = 5
 
     device = CFG.DEVICE
     train_csv = CFG.TRAIN_FOLDS_PATH
