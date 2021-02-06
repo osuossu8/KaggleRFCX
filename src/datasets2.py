@@ -88,7 +88,10 @@ class SedDatasetV6:
                     label = np.where(label > 0, 1.0, 0)
 
             elif r > 0.4 and r <= 0.7:
-                y = np.concatenate([y[:int(sr*self.wave_form_mix_up_ratio)], y2[int(sr*self.wave_form_mix_up_ratio):]])
+                if r2 > 0.5:
+                    y = np.concatenate([y[:int(sr*self.wave_form_mix_up_ratio)], y2[int(sr*self.wave_form_mix_up_ratio):]])
+                else:
+                    y = np.concatenate([y2[:int(sr*self.wave_form_mix_up_ratio)], y[int(sr*self.wave_form_mix_up_ratio):]])
                 label = label + label2
                 label = np.where(label > 0, 1.0, 0)
             else:
