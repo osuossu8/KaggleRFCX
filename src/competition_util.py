@@ -9,6 +9,7 @@ from torchlibrosa.augmentation import SpecAugmentation
 
 import timm
 from timm.models.efficientnet import tf_efficientnet_b0_ns, tf_efficientnet_b1_ns
+from timm.models.mobilenetv3 import tf_mobilenetv3_small_minimal_100, tf_mobilenetv3_small_075, mobilenetv3_large_075
 
 
 def init_layer(layer):
@@ -218,7 +219,22 @@ encoder_params = {
     "tf_efficientnet_b1_ns": {
         "features": 1280,
         "init_op": partial(tf_efficientnet_b1_ns, pretrained=True, drop_path_rate=0.2)
-    }
+    },
+
+    "tf_mobilenetv3_small_minimal_100": {
+        "features": 1024,
+        "init_op": partial(tf_mobilenetv3_small_minimal_100, pretrained=True, drop_path_rate=0.2)
+    },
+
+    "tf_mobilenetv3_small_075": {
+        "features": 1024,
+        "init_op": partial(tf_mobilenetv3_small_075, pretrained=True, drop_path_rate=0.2)
+    },
+
+    "mobilenetv3_large_075": {
+        "features": 1280,
+        "init_op": partial(mobilenetv3_large_075, pretrained=True, drop_path_rate=0.2)
+    },
 }
 
 
@@ -233,6 +249,8 @@ class AudioSEDModel(nn.Module):
         amin = 1e-10
         top_db = None
         self.interpolate_ratio = 30  # Downsampled ratio
+        n_features = 1024
+        act = "sigmoid"
 
         # Spectrogram extractor
         self.spectrogram_extractor = Spectrogram(n_fft=window_size, hop_length=hop_size, 
@@ -250,8 +268,8 @@ class AudioSEDModel(nn.Module):
         
         # Model Encoder
         self.encoder = encoder_params[encoder]["init_op"]()
-        self.fc1 = nn.Linear(encoder_params[encoder]["features"], 1024, bias=True)
-        self.att_block = AttBlock(1024, classes_num, activation="sigmoid")
+        self.fc1 = nn.Linear(encoder_params[encoder]["features"], n_features, bias=True)
+        self.att_block = AttBlock(n_features, classes_num, activation=act)
         self.bn0 = nn.BatchNorm2d(mel_bins)
         self.init_weight()
     
