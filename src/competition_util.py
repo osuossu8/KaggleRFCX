@@ -347,7 +347,7 @@ class AudioSEDShortModel(nn.Module):
         ref = 1.0
         amin = 1e-10
         top_db = None
-        self.interpolate_ratio = 20 # 30  # Downsampled ratio
+        self.interpolate_ratio = 27 # 20 # 30  # Downsampled ratio
 
         self.spectrogram_extractor = Spectrogram(n_fft=window_size, hop_length=hop_size, 
             win_length=window_size, window=window, center=center, pad_mode=pad_mode, 

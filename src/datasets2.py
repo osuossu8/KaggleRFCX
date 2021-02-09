@@ -139,8 +139,9 @@ class SedDatasetV7:
             lam = np.random.beta(self.wave_form_mix_up_ratio, self.wave_form_mix_up_ratio)
 
             if r <= 0.4:
-                y = normalize(y.reshape(-1, 1)) * lam + normalize(y2.reshape(-1, 1)) * (1-lam)
-                y = np.squeeze(y)
+                # y = normalize(y.reshape(-1, 1)) * lam + normalize(y2.reshape(-1, 1)) * (1-lam)
+                y = y * lam + y2 * (1-lam)
+                # y = np.squeeze(y)
 
                 if r2 > 0.6:
                     label = label * lam + label2 * (1-lam)

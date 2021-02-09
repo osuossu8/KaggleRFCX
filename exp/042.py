@@ -38,7 +38,9 @@ from src.losses import PANNsLoss, FocalLoss, PANNsWithFocalLoss, ClassWeightedPA
 
 
 train_audio_transform_v2 = AA.Compose([
-    AA.AddGaussianSNR(p=0.5)
+    AA.AddGaussianSNR(p=0.5),
+    AA.PitchShift(min_semitones=-0.5, max_semitones=0.5, p=0.1),
+    AA.Gain(p=0.2)
 ])
 
 
@@ -50,6 +52,10 @@ def main(fold):
     os.makedirs(args.save_path, exist_ok=True)
 
     train_df = pd.read_csv(args.train_csv)
+    # train_additional_df = pd.read_csv(args.train_additional_csv)
+
+    # train_df = pd.concat([train_df[['recording_id', 'species_id', 't_min', 't_max', 'kfold']], train_additional_df[['recording_id', 'species_id', 't_min', 't_max', 'kfold']]]).reset_index(drop=True)
+
     sub_df = pd.read_csv(args.sub_csv)
 
     train_fold = train_df[train_df.kfold != fold]
@@ -109,7 +115,7 @@ def main(fold):
         num_workers=args.num_workers
     )
 
-    model = AudioSEDModel(**args.model_param)
+    model = AudioSEDShortModel(**args.model_param)
     model = model.to(args.device)
 
     if args.pretrain_weights:
@@ -172,7 +178,7 @@ def main(fold):
 
 
 class args:
-    exp_name = "EXP041"
+    exp_name = "EXP042"
     pretrain_weights = None
     model_param = {
         'encoder' : 'tf_efficientnet_b0_ns',
@@ -180,13 +186,13 @@ class args:
         'window_size' : 512 * 2,
         'hop_size' : 345 * 2,
         'mel_bins' : 128,
-        'fmin' : 20,
+        'fmin' : 40, # 20,
         'fmax' : 18000, 
         'classes_num' : 24
     }
-    mix_up_alpha = 0.6 
-    period = 10
-    stride = 10
+    mix_up_alpha = 0.4 
+    period = 6 # 10
+    stride = 6 # 10
     seed = CFG.SEED
     start_epcoh = 0 
     epochs = 55
@@ -200,7 +206,7 @@ class args:
 
     device = CFG.DEVICE
     train_csv = CFG.TRAIN_FOLDS_PATH
-    train_additional_csv = None
+    train_additional_csv = CFG.TRAIN_FOLDS_ADDITIONAL_TP_PATH
     sub_csv = CFG.SUBMISSION_PATH
     output_dir = "weights"
     train_data_path = CFG.TRAIN_IMG_PATH
