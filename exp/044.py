@@ -152,7 +152,7 @@ def main(fold):
             print(f"########## >>>>>>>> Model Improved From {best_f1_score} ----> {valid_avg['f1_score']}")
             torch.save(model.state_dict(), os.path.join(args.save_path, f'fold-{args.fold}.bin'))
             # best_lwlrap = valid_avg['lwlrap']
-            best_lwlrap = valid_avg['f1_score']
+            best_f1_score = valid_avg['f1_score']
             early_stop_count = 0
         else:
             early_stop_count += 1
