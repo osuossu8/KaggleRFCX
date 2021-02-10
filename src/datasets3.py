@@ -64,7 +64,6 @@ def crop_or_pad_v3(y, sr, period, record, mode="train"):
     ending_time = ending / sr
     label = np.zeros(24, dtype='f')
 
-    if record['is_tp']:
     for i in range(len(record['t_min'])):
         if (record['t_min'][i] <= ending_time) and (record['t_max'][i] >= beginning_time):
             if record['is_add']:
