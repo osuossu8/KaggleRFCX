@@ -57,7 +57,7 @@ def main(fold):
     train_fold = train_df[train_df.kfold != fold]
     valid_fold = train_df[train_df.kfold == fold]
 
-    train_dataset = SedDatasetV6(
+    train_dataset = SedDatasetV2(
         df = train_fold,
         period=args.period,
         audio_transform=train_audio_transform_v2,
@@ -66,7 +66,7 @@ def main(fold):
         mode="train"
     )
 
-    valid_dataset = SedDatasetV6(
+    valid_dataset = SedDatasetV2(
         df = valid_fold,
         period=args.period,
         stride=args.stride,
@@ -183,9 +183,9 @@ class args:
     model_param = {
         'encoder' : 'tf_efficientnet_b0_ns',
         'sample_rate': 48000,
-        'window_size' : 512 * 2,
-        'hop_size' : 345 * 2,
-        'mel_bins' : 144,
+        'window_size' : 512 * 4,
+        'hop_size' : 512,
+        'mel_bins' : 256,
         'fmin' : 20,
         'fmax' : 24000,
         'classes_num' : 24
