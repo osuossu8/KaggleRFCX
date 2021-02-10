@@ -62,8 +62,8 @@ def main(fold):
     
     train_tp['is_add'] = 0
     train_ad['is_add'] = 1
-    train_df = pd.concat([train_df[['recording_id', 'species_id', 't_min', 't_max', 'kfold', 'is_add']], 
-                          train_additional_df[['recording_id', 'species_id', 't_min', 't_max', 'kfold', 'is_add']]]).reset_index(drop=True)
+    train_df = pd.concat([train_tp[['recording_id', 'species_id', 't_min', 't_max', 'kfold', 'is_add']], 
+                          train_ad[['recording_id', 'species_id', 't_min', 't_max', 'kfold', 'is_add']]]).reset_index(drop=True)
 
 
     sub_df = pd.read_csv(args.sub_csv)
