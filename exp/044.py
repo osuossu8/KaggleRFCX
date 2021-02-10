@@ -52,12 +52,19 @@ def main(fold):
     os.makedirs(args.save_path, exist_ok=True)
 
     train_tp = pd.read_csv(args.train_csv)
-    train_fp = pd.read_csv(args.train_additional_csv)
+    # train_fp = pd.read_csv(args.train_noisy_csv)
 
-    train_tp['is_tp'] = 1
-    train_fp['is_tp'] = 0
+    # train_tp['is_tp'] = 1
+    # train_fp['is_tp'] = 0
+    # train_df = pd.concat([train_tp, train_fp])
 
-    train_df = pd.concat([train_tp, train_fp])
+    train_ad = pd.read_csv(args.train_additional_csv)
+    
+    train_tp['is_add'] = 0
+    train_ad['is_add'] = 1
+    train_df = pd.concat([train_df[['recording_id', 'species_id', 't_min', 't_max', 'kfold', 'is_add']], 
+                          train_additional_df[['recording_id', 'species_id', 't_min', 't_max', 'kfold', 'is_add']]]).reset_index(drop=True)
+
 
     sub_df = pd.read_csv(args.sub_csv)
 
@@ -126,7 +133,7 @@ def main(fold):
         model.load_state_dict(torch.load(args.pretrain_weights, map_location=args.device), strict=False)
         model = model.to(args.device)
 
-    criterion = FocalLoss() # PANNsLoss() # FocalLoss() #BCEWithLogitsLoss() #MaskedBCEWithLogitsLoss() #BCEWithLogitsLoss()
+    criterion = FocalLoss() #BCEWithLogitsLoss() #MaskedBCEWithLogitsLoss() #BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     num_train_steps = int(len(train_loader) * args.epochs)
     num_warmup_steps = int(0.1 * args.epochs * len(train_loader))
@@ -206,14 +213,15 @@ class args:
     lr = 1e-3
     batch_size = 16
     num_workers = 0
-    early_stop = 15
+    early_stop = 10 # 15
     step_scheduler = True
     epoch_scheduler = False
     num_tta = 5
 
     device = CFG.DEVICE
     train_csv = CFG.TRAIN_FOLDS_PATH
-    train_additional_csv = CFG.TRAIN_FOLDS_NOISY_PATH
+    train_noisy_csv = CFG.TRAIN_FOLDS_NOISY_PATH
+    train_additional_csv = CFG.TRAIN_FOLDS_ADDITIONAL_TP_PATH
     sub_csv = CFG.SUBMISSION_PATH
     output_dir = "weights"
     train_data_path = CFG.TRAIN_IMG_PATH
