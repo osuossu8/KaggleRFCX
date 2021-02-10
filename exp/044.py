@@ -31,8 +31,8 @@ from configs import config as CFG
 from src.machine_learning_util import trace, seed_everything, to_pickle, unpickle
 from src.competition_util import AudioSEDModel, AudioSEDShortModel
 from src.augmentations import train_audio_transform
-from src.datasets import SedDatasetV2, SedDatasetV3, SedDatasetV5, SedDatasetTest, SedDatasetTestWithTTA
-from src.datasets2 import SedDatasetV6
+from src.datasets import SedDatasetV2, SedDatasetTestWithTTA
+from src.datasets3 import SedDataset as SedDataset3
 from src.engine import train_epoch, valid_epoch, test_epoch
 from src.losses import PANNsLoss, FocalLoss, PANNsWithFocalLoss, ClassWeightedPANNsLoss
 
@@ -51,13 +51,20 @@ def main(fold):
     args.save_path = os.path.join(args.output_dir, args.exp_name)
     os.makedirs(args.save_path, exist_ok=True)
 
-    train_df = pd.read_csv(args.train_csv)
+    train_tp = pd.read_csv(args.train_csv)
+    train_fp = pd.read_csv(args.train_additional_csv)
+
+    train_tp['is_tp'] = 1
+    train_fp['is_tp'] = 0
+
+    train_df = pd.concat([train_tp, train_fp])
+
     sub_df = pd.read_csv(args.sub_csv)
 
     train_fold = train_df[train_df.kfold != fold]
     valid_fold = train_df[train_df.kfold == fold]
 
-    train_dataset = SedDatasetV2(
+    train_dataset = SedDataset3(
         df = train_fold,
         period=args.period,
         audio_transform=train_audio_transform_v2,
@@ -66,7 +73,7 @@ def main(fold):
         mode="train"
     )
 
-    valid_dataset = SedDatasetV2(
+    valid_dataset = SedDataset3(
         df = valid_fold,
         period=args.period,
         stride=args.stride,
@@ -119,7 +126,7 @@ def main(fold):
         model.load_state_dict(torch.load(args.pretrain_weights, map_location=args.device), strict=False)
         model = model.to(args.device)
 
-    criterion = PANNsLoss() # FocalLoss() #BCEWithLogitsLoss() #MaskedBCEWithLogitsLoss() #BCEWithLogitsLoss()
+    criterion = FocalLoss() # PANNsLoss() # FocalLoss() #BCEWithLogitsLoss() #MaskedBCEWithLogitsLoss() #BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     num_train_steps = int(len(train_loader) * args.epochs)
     num_warmup_steps = int(0.1 * args.epochs * len(train_loader))
@@ -185,7 +192,7 @@ class args:
         'sample_rate': 48000,
         'window_size' : 512 * 4,
         'hop_size' : 512,
-        'mel_bins' : 256,
+        'mel_bins' : 224,
         'fmin' : 20,
         'fmax' : 24000,
         'classes_num' : 24
@@ -206,7 +213,7 @@ class args:
 
     device = CFG.DEVICE
     train_csv = CFG.TRAIN_FOLDS_PATH
-    train_additional_csv = None
+    train_additional_csv = CFG.TRAIN_FOLDS_NOISY_PATH
     sub_csv = CFG.SUBMISSION_PATH
     output_dir = "weights"
     train_data_path = CFG.TRAIN_IMG_PATH
