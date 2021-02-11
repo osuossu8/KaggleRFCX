@@ -1087,7 +1087,7 @@ def train_loop(fold):
 
 
 def get_master_df():
-    df = pd.read_csv("../input/rfcx-species-audio-detection/train_tp.csv").sort_values("recording_id")
+    df = pd.read_csv("inputs/train_tp.csv").sort_values("recording_id")
     df['species_ids'] = df['species_id'].astype(str)
     label_dict = {}
     for recording_id, tmp in df.groupby(['recording_id']):
