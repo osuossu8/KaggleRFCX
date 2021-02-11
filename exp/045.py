@@ -5,7 +5,7 @@ import os
 import sys
 sys.path.append("/root/workspace/KaggleRFCX")
 
-OUTPUT_DIR = 'outputs/exp076/'
+OUTPUT_DIR = 'outputs/exp045/'
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
 
@@ -576,7 +576,10 @@ class AudioClassifier(nn.Module):
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout1 = nn.Dropout(0.3)
         self.dropout2 = nn.Dropout(0.3)
-        n_features = self.net.classifier.in_features
+        if 'efficientnet' in model_name: 
+            n_features = self.net.classifier.in_features
+        else:
+            n_features = self.net.fc.in_features
         self.net_classifier = nn.Linear(n_features, n_out)
         self.init_weight()
 
@@ -886,7 +889,7 @@ def get_valid_all_clip_result(fold):
     )
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=CFG.batch_size//32,
+        batch_size=CFG.batch_size//64,
         shuffle=False,
         drop_last=False,
         num_workers=CFG.num_workers
@@ -934,7 +937,7 @@ def inference(fold):
     )
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=CFG.batch_size//32,
+        batch_size=CFG.batch_size//64,
         shuffle=False,
         drop_last=False,
         num_workers=CFG.num_workers
@@ -1116,7 +1119,7 @@ def get_result(oof_df):
 # main
 # ====================================================
 def main():
-    
+    """
     if CFG.train:
         master_df = get_master_df()
         # train 
@@ -1134,7 +1137,7 @@ def main():
         get_result(oof_df)
         # save result
         oof_df.to_csv(OUTPUT_DIR+'oof_df.csv', index=False)
-
+    """
     if CFG.inference:
         # inference
         LOGGER.info(f"========== inference ==========")
