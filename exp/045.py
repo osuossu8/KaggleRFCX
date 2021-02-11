@@ -1119,7 +1119,6 @@ def get_result(oof_df):
 # main
 # ====================================================
 def main():
-    """
     if CFG.train:
         master_df = get_master_df()
         # train 
@@ -1137,7 +1136,7 @@ def main():
         get_result(oof_df)
         # save result
         oof_df.to_csv(OUTPUT_DIR+'oof_df.csv', index=False)
-    """
+
     if CFG.inference:
         # inference
         LOGGER.info(f"========== inference ==========")
