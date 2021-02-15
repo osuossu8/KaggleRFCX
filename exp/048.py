@@ -191,7 +191,7 @@ seed_torch(seed=CFG.seed)
 traint = pd.read_csv('inputs/train_tp.csv')
 trainf = pd.read_csv('inputs/train_fp.csv')
 traintpl = pd.read_csv('intermids/pseudo_labeled_additional_train_tp.csv')
-threshold = 0.9
+threshold = 0.95
 traintpl = traintpl[traintpl['max_confidence']>threshold].reset_index(drop=True)
 del traintpl['kfold'], traintpl['max_confidence'], traintpl['mean_confidence']
 
@@ -210,8 +210,8 @@ TIME = CFG.duration
 SR = 48000
 FMIN = 20 # 40
 FMAX = SR // 2
-IMAGE_WIDTH = 320 # 224 # 320
-IMAGE_HEIGHT = 320 #  224 # 320
+IMAGE_WIDTH = 256 # 224 # 320
+IMAGE_HEIGHT = 256 #  224 # 320
 N_MELS = IMAGE_HEIGHT
 HOP_SIZE = 512
 WINDOW_SIZE = 512*4
