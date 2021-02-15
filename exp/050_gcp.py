@@ -16,15 +16,15 @@ if not os.path.exists(OUTPUT_DIR):
 class CFG:
     debug=False
     apex=False # True
-    num_workers=0 # 8
-    model_name= "seresnext50_32x4d"
+    num_workers=8
+    model_name= "tf_efficientnet_b0_ns"
     model_param = {
         'encoder' : model_name,
         'classes_num' : 24
     }
     duration=10
     period=6
-    scheduler='CosineAnnealingLR' # ['ReduceLROnPlateau', 'CosineAnnealingLR', 'CosineAnnealingWarmRestarts']
+    # scheduler='CosineAnnealingLR' # ['ReduceLROnPlateau', 'CosineAnnealingLR', 'CosineAnnealingWarmRestarts']
     step_scheduler=True
     epochs=60 # 50
     #factor=0.2 # ReduceLROnPlateau
@@ -214,11 +214,11 @@ TIME = CFG.duration
 SR = 48000
 FMIN = 20 # 40
 FMAX = SR // 2
-IMAGE_WIDTH = 456
-IMAGE_HEIGHT = 456 #  224 # 320
+IMAGE_WIDTH = 320 # 384 # 456
+IMAGE_HEIGHT = 320 # 384 # 456 #  224 # 320
 N_MELS = IMAGE_HEIGHT
 HOP_SIZE = 512
-WINDOW_SIZE = 512*6
+WINDOW_SIZE = 512 * 4 # 512*6
 
 # 各speciesのfmaxとfminを求める
 species_fmin = traint.groupby("species_id")["f_min"].agg(min).reset_index()
@@ -372,7 +372,7 @@ trainfpl.to_csv(OUTPUT_DIR+"folds_additional_from_fp.csv", index=False)
 augmenter = A.Compose([
     A.AddGaussianNoise(min_amplitude=0.01, max_amplitude=0.03, p=0.2),
     # A.PitchShift(min_semitones=-3, max_semitones=3, p=0.2),
-    A.Gain(p=0.2)
+    # A.Gain(p=0.2)
 ])
 
 
