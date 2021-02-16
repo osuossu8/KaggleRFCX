@@ -190,19 +190,8 @@ seed_torch(seed=CFG.seed)
 # ====================================================
 traint = pd.read_csv('inputs/train_tp.csv')
 trainf = pd.read_csv('inputs/train_fp.csv')
-traintpl = pd.read_csv('intermids/pseudo_labeled_additional_train_tp.csv')
-trainfpl = pd.read_csv('intermids/pseudo_labeled_additional_train_fp.csv')
-threshold = 0.98 # 0.95
-traintpl = traintpl[traintpl['max_confidence']>threshold].reset_index(drop=True)
-del traintpl['kfold'], traintpl['max_confidence'], traintpl['mean_confidence']
-trainfpl = trainfpl[trainfpl['max_confidence']>threshold].reset_index(drop=True)
-del trainfpl['kfold'], trainfpl['max_confidence'], trainfpl['mean_confidence']
-
 traint["istp"] = 1
 trainf["istp"] = 0
-traintpl["istp"] = 1 # 0.5
-trainfpl["istp"] = 1
-
 test = pd.read_csv('inputs/sample_submission.csv')
 print(traint.shape, trainf.shape, test.shape)
 
@@ -250,9 +239,6 @@ trainf['species_id'] = trainf['species_id'].astype(int)
 species_fmin_fmax.drop(["f_min", "f_max"], inplace=True, axis=1)
 traint = pd.merge(traint, species_fmin_fmax, on="species_id", how="left")
 trainf = pd.merge(trainf, species_fmin_fmax, on="species_id", how="left")
-traintpl = pd.merge(traintpl, species_fmin_fmax, on="species_id", how="left")
-traintpl = pd.merge(traintpl, traint[['recording_id', 'f_min', "f_max"]], on="recording_id", how="left")
-trainfpl = pd.merge(trainfpl, traint[['recording_id', 'f_min', "f_max"]], on="recording_id", how="left")
 
 # tpとfpをconcat
 train_df = pd.concat([traint, trainf], axis=0).reset_index()
@@ -262,109 +248,21 @@ print(train_df.shape)
 # ====================================================
 # CV split
 # ====================================================
+train_gby = train_df.groupby("recording_id")[["species_id"]].first().reset_index()
+train_gby = train_gby.sample(frac=1, random_state=CFG.seed).reset_index(drop=True)
+train_gby.loc[:, 'kfold'] = -1
 
-# https://www.kaggle.com/ttahara/ranzcr-multi-head-model-training
-def multi_label_stratified_group_k_fold(label_arr: np.array, gid_arr: np.array, n_fold: int, seed: int=42):
-    """
-    create multi-label stratified group kfold indexs.
-    reference: https://www.kaggle.com/jakubwasikowski/stratified-group-k-fold-cross-validation
-    input:
-        label_arr: numpy.ndarray, shape = (n_train, n_class)
-            multi-label for each sample's index using multi-hot vectors
-        gid_arr: numpy.array, shape = (n_train,)
-            group id for each sample's index
-        n_fold: int. number of fold.
-        seed: random seed.
-    output:
-        yield indexs array list for each fold's train and validation.
-    """
-    np.random.seed(seed)
-    random.seed(seed)
-    start_time = time.time()
-    n_train, n_class = label_arr.shape
-    gid_unique = sorted(set(gid_arr))
-    n_group = len(gid_unique)
-    # # aid_arr: (n_train,), indicates alternative id for group id.
-    # # generally, group ids are not 0-index and continuous or not integer.
-    gid2aid = dict(zip(gid_unique, range(n_group)))
-    aid_arr = np.vectorize(lambda x: gid2aid[x])(gid_arr)
-    # # count labels by class
-    cnts_by_class = label_arr.sum(axis=0)  # (n_class, )
-    # # count labels by group id.
-    col, row = np.array(sorted(enumerate(aid_arr), key=lambda x: x[1])).T
-    cnts_by_group = sp.sparse.coo_matrix(
-        (np.ones(len(label_arr)), (row, col))
-    ).dot(sp.sparse.coo_matrix(label_arr)).toarray().astype(int)
-    del col
-    del row
-    cnts_by_fold = np.zeros((n_fold, n_class), int)
-    groups_by_fold = [[] for fid in range(n_fold)]
-    group_and_cnts = list(enumerate(cnts_by_group))  # pair of aid and cnt by group
-    np.random.shuffle(group_and_cnts)
-    print("finished preparation", time.time() - start_time)
-    for aid, cnt_by_g in sorted(group_and_cnts, key=lambda x: -np.std(x[1])):
-        best_fold = None
-        min_eval = None
-        for fid in range(n_fold):
-            # # eval assignment.
-            cnts_by_fold[fid] += cnt_by_g
-            fold_eval = (cnts_by_fold / cnts_by_class).std(axis=0).mean()
-            cnts_by_fold[fid] -= cnt_by_g
-            if min_eval is None or fold_eval < min_eval:
-                min_eval = fold_eval
-                best_fold = fid
-        cnts_by_fold[best_fold] += cnt_by_g
-        groups_by_fold[best_fold].append(aid)
-    print("finished assignment.", time.time() - start_time)
-    gc.collect()
-    idx_arr = np.arange(n_train)
-    for fid in range(n_fold):
-        val_groups = groups_by_fold[fid]
-        val_indexs_bool = np.isin(aid_arr, val_groups)
-        train_indexs = idx_arr[~val_indexs_bool]
-        val_indexs = idx_arr[val_indexs_bool]
-        yield train_indexs, val_indexs
+X = train_gby["recording_id"].values
+y = train_gby["species_id"].values
 
-train_df = train_df.drop(columns='index').reset_index()
-target_cols = [c for c in range(24)]
-# tp split
-tp_folds = pd.pivot_table(train_df[train_df['istp']==1][['index', 'species_id']], index='index', columns='species_id', aggfunc=len).fillna(0)
-tp_folds = tp_folds.reset_index()
-tp_folds = tp_folds.merge(train_df, on='index', how='left')
-label_arr = tp_folds[target_cols].values
-group_id = tp_folds['recording_id'].values
-train_val_indexs = list(multi_label_stratified_group_k_fold(label_arr, group_id, CFG.n_fold, CFG.seed))
-tp_folds["kfold"] = -1
-for fold_id, (trn_idx, val_idx) in enumerate(train_val_indexs):
-    tp_folds.loc[val_idx, "kfold"] = fold_id
-# fp split
-fp_folds = pd.pivot_table(train_df[train_df['istp']==0][['index', 'species_id']], index='index', columns='species_id', aggfunc=len).fillna(0)
-fp_folds = fp_folds.reset_index()
-fp_folds = fp_folds.merge(train_df, on='index', how='left')
-fp_folds = fp_folds[~fp_folds['recording_id'].isin(tp_folds['recording_id'].unique())].reset_index(drop=True) # tp_foldsに存在するrecording_idは除く
-label_arr = fp_folds[target_cols].values
-group_id = fp_folds['recording_id'].values
-train_val_indexs = list(multi_label_stratified_group_k_fold(label_arr, group_id, CFG.n_fold, CFG.seed))
-fp_folds["kfold"] = -1
-for fold_id, (trn_idx, val_idx) in enumerate(train_val_indexs):
-    fp_folds.loc[val_idx, "kfold"] = fold_id
-# merge split
-merge_df = pd.concat([tp_folds, fp_folds])
-merge_df = merge_df[['recording_id', 'kfold']].groupby('recording_id', as_index=False).mean()
-train_df = train_df.merge(merge_df, on="recording_id", how="left")
+kfold = StratifiedKFold(n_splits=CFG.n_fold)
+for fold, (t_idx, v_idx) in enumerate(kfold.split(X, y)):
+    train_gby.loc[v_idx, "kfold"] = fold
+
+train_df = train_df.merge(train_gby[['recording_id', 'kfold']], on="recording_id", how="left")
 print(train_df.kfold.value_counts())
 train_df.to_csv(OUTPUT_DIR+"folds.csv", index=False)
 species_fmin_fmax.to_csv(OUTPUT_DIR+"species_fmin_fmax.csv", index=False)
-
-# add pseudo-labeled tp
-traintpl = traintpl.merge(merge_df, on="recording_id", how="left").reset_index()
-print(traintpl.kfold.value_counts())
-traintpl.to_csv(OUTPUT_DIR+"folds_additional_from_tp.csv", index=False)
-
-# add pseudo-labeled fp
-trainfpl = trainfpl.merge(merge_df, on="recording_id", how="left").reset_index()
-print(trainfpl.kfold.value_counts())
-trainfpl.to_csv(OUTPUT_DIR+"folds_additional_from_fp.csv", index=False)
 
 # ====================================================
 # audiomentations
@@ -445,13 +343,8 @@ class AudioDataset(Dataset):
         lack = tmin - (effective_length - (tmax-tmin)) // 2
         start = cut_min + np.random.randint(0, (self.time-self.period)*sr)
         if extra > 0:
-            if tmax-(tmax-tmin)//2-self.period*sr < len_y-self.period*sr:
-                start = np.random.randint(tmax-(tmax-tmin)//2-self.period*sr, len_y-self.period*sr)
-            else:
-                start = np.random.randint(tmax-(tmax-tmin)//2-self.period*sr-(len_y-self.period*sr), len_y-self.period*sr)
+            start = np.random.randint(tmax-(tmax-tmin)//2-self.period*sr, len_y-self.period*sr)
         if lack < 0:
-            if tmin == 0:
-                tmin = 1
             start = cut_min + np.random.randint(0, tmin)
                      
 
@@ -679,6 +572,10 @@ from torch.autograd import Variable
 from torch.nn.parameter import Parameter
 
 
+def gem(x, p=3, eps=1e-6):
+    return F.avg_pool2d(x.clamp(min=eps).pow(p), (x.size(-2), x.size(-1))).pow(1./p)
+
+
 class GeM(nn.Module):
     def __init__(self, p=3, eps=1e-6):
         super(GeM,self).__init__()
@@ -716,179 +613,175 @@ class AudioClassifier(nn.Module):
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc2 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc3 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc4 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc5 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc6 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc7 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc8 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc9 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc10 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc11 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc12 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc13 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc14 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc15 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc16 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc17 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc18 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc19 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc20 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc21 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc22 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc23 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
         self.fc24 = nn.Sequential(
                           nn.Linear(in_features=n_features, out_features=512, bias=True),
                           nn.BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
                           nn.Dropout(p=0.2),
                           nn.ReLU(inplace=True),
-                          nn.Linear(n_features, 1))
+                          nn.Linear(512, 1))
 
-        self.init_weight()
 
         # korrniaのrandom cropはh,wを想定しているため注意
         self.transform = nn.Sequential(K.RandomHorizontalFlip(p=0.1),
                                        #K.GaussianBlur(7, p=0.5),
                                        #K.RandomCrop((round(IMAGE_HEIGHT*0.7), round(IMAGE_WIDTH*0.7)),p=0.3)
                                        )
-
-    def init_weight(self):
-        init_layer(self.net_classifier)
         
     def forward(self, x, f_min_mels, f_max_mels, train=True, test=False):  # x: (bs, 1, w, h)
         # f_min_melとf_max_melによってカットする
@@ -1299,16 +1192,8 @@ def train_loop(fold):
     train_df = pd.read_csv(OUTPUT_DIR+'folds.csv')
     if CFG.debug:
         train_df = train_df.sample(n=1000, random_state=42)
-    traintpl = pd.read_csv(OUTPUT_DIR+"folds_additional_from_tp.csv")
-    trainfpl = pd.read_csv(OUTPUT_DIR+"folds_additional_from_fp.csv")
-    train_fold_add_fromt = traintpl[traintpl.kfold != fold]
-    train_fold_add_fromf = traintpl[trainfpl.kfold != fold]
-
     train_fold = train_df[train_df.kfold != fold]
     valid_fold = train_df[train_df.kfold == fold]
-
-    train_fold = pd.concat([train_fold, train_fold_add_fromt, train_fold_add_fromf], axis=0)
-
     train_dataset = AudioDataset(
         df=train_fold,
         period=CFG.period,
