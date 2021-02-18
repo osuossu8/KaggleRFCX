@@ -33,7 +33,7 @@ from src.competition_util import AudioSEDModel
 from src.augmentations import train_audio_transform
 from src.datasets import SedDatasetV2, SedDatasetTest
 from src.engine import train_epoch, valid_epoch, test_epoch
-from src.losses import PANNsLoss
+from src.losses import PANNsLoss, FocalLoss, FocalLoss5th, LSEPLoss
 
 
 train_audio_transform_v2 = AA.Compose([
@@ -114,7 +114,7 @@ def main(fold):
         model.load_state_dict(torch.load(args.pretrain_weights, map_location=args.device), strict=False)
         model = model.to(args.device)
 
-    criterion = PANNsLoss() #BCEWithLogitsLoss() #MaskedBCEWithLogitsLoss() #BCEWithLogitsLoss()
+    criterion = LSEPLoss() # PANNsLoss() #BCEWithLogitsLoss() #MaskedBCEWithLogitsLoss() #BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
 
