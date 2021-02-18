@@ -8,7 +8,7 @@ from torchlibrosa.stft import Spectrogram, LogmelFilterBank
 from torchlibrosa.augmentation import SpecAugmentation
 
 import timm
-from timm.models.efficientnet import tf_efficientnet_b0_ns, tf_efficientnet_b1_ns
+from timm.models.efficientnet import tf_efficientnet_b0_ns, tf_efficientnet_b1_ns, tf_efficientnet_b2_ns
 from timm.models.mobilenetv3 import tf_mobilenetv3_small_minimal_100, tf_mobilenetv3_small_075, mobilenetv3_large_075
 
 
@@ -219,6 +219,11 @@ encoder_params = {
     "tf_efficientnet_b1_ns": {
         "features": 1280,
         "init_op": partial(tf_efficientnet_b1_ns, pretrained=True, drop_path_rate=0.2)
+    },
+
+    "tf_efficientnet_b2_ns": {
+        "features": 1408,
+        "init_op": partial(tf_efficientnet_b2_ns, pretrained=True, drop_path_rate=0.2)
     },
 
     "tf_mobilenetv3_small_minimal_100": {

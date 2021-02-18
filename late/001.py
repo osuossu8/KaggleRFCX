@@ -36,11 +36,11 @@ from src.engine import train_epoch, valid_epoch, test_epoch
 from src.losses import PANNsLoss
 
 
-#train_audio_transform_v2 = AA.Compose([
-#    AA.AddGaussianSNR(p=0.5),
+train_audio_transform_v2 = AA.Compose([
+    AA.AddGaussianSNR(p=0.5),
 #    AA.PitchShift(min_semitones=-0.5, max_semitones=0.5, p=0.1),
 #    AA.Gain(p=0.2)
-#])
+])
 
 
 def main(fold):
@@ -79,11 +79,7 @@ def main(fold):
         df = sub_df,
         period=args.period,
         stride=10,
-        audio_transform=train_audio_transform_v2, 
-        wave_form_mix_up_ratio=None,
-        tta=args.num_tta,
-        data_path=args.test_data_path,
-        mode="test"
+        data_path=args.test_data_path
     )
 
     train_loader = torch.utils.data.DataLoader(
@@ -176,21 +172,21 @@ class args:
     pretrain_weights = None
     model_param = {
         'encoder' : 'tf_efficientnet_b2_ns',
-        'sample_rate': 32000,
-        'window_size' : 512 * 2,
+        'sample_rate': 48000,
+        'window_size' : 512 * 4,
         'hop_size' : 400,
         'mel_bins' : 244,
         'fmin' : 20,
-        'fmax' : 32000 // 2,
+        'fmax' : 48000 // 2,
         'classes_num' : 24
     }
-    # wave_form_mix_up_ratio = None # 0.9
+    wave_form_mix_up_ratio = None # 0.9
     period = 10
     seed = CFG.SEED
     start_epcoh = 0 
     epochs = 30
     lr = 1e-3
-    batch_size = 16
+    batch_size = 8 # 16
     num_workers = 0
     early_stop = 10
     step_scheduler = True
