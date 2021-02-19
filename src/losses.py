@@ -80,13 +80,14 @@ class FocalLoss(nn.Module):
 
 
 class FocalLoss5th(nn.Module):
-    def __init__(self,  gamma=2.0, alpha=1.0):
+    def __init__(self, stage=2, gamma=2.0, alpha=1.0):
         super().__init__()
         self.posi_loss = nn.BCEWithLogitsLoss(reduction='none')
         self.nega_loss = nn.BCEWithLogitsLoss(reduction='none')
         self.zero_loss = nn.BCEWithLogitsLoss(reduction='none')
         self.gamma = gamma
         self.alpha = alpha
+        self.stage = stage
         # self.zero_smoothing = 0.45
 
     def forward(self, input, target):
@@ -110,7 +111,10 @@ class FocalLoss5th(nn.Module):
         nega_loss = (nega_loss * nega_mask).sum()
         zero_loss = (zero_loss * zero_mask).sum()  # stage2ではこれをlossに加えない
         
-        return posi_loss, nega_loss, zero_loss
+        if stage == 2:
+            return posi_loss + nega_loss
+        else:
+            return posi_loss + nega_loss + zero_loss
 
 
 def focal_loss(input, target, focus=2.0, raw=True):
