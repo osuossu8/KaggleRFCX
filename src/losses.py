@@ -88,33 +88,41 @@ class FocalLoss5th(nn.Module):
         self.gamma = gamma
         self.alpha = alpha
         self.stage = stage
-        # self.zero_smoothing = 0.45
+        self.zero_smoothing_label = 0.45
 
     def forward(self, input, target):
         # mask
+        input_ = input["logit"]
+        input_ = torch.where(torch.isnan(input_),
+                             torch.zeros_like(input_),
+                             input_)
+        input_ = torch.where(torch.isinf(input_),
+                             torch.zeros_like(input_),
+                             input_)
+
         posi_mask = (target == 1).float()
         nega_mask = (target == -1).float()  # (n_batch, n_class)
         zero_mask = (target == 0).float()  # ambiguous label
       
-        posi_y = torch.ones(input.shape).to('cuda')
-        nega_y = torch.zeros(input.shape).to('cuda')
-        zero_y = torch.full(input.shape, self.zero_smoothing_label).to('cuda')   # use smoothing label
+        posi_y = torch.ones(input_.shape).to('cuda')
+        nega_y = torch.zeros(input_.shape).to('cuda')
+        zero_y = torch.full(input_.shape, self.zero_smoothing_label).to('cuda')   # use smoothing label
 
-        posi_loss = self.posi_loss(input, posi_y)
-        nega_loss = self.nega_loss(input, nega_y)
-        zero_loss = self.zero_loss(input, zero_y)
+        posi_loss = self.posi_loss(input_, posi_y)
+        nega_loss = self.nega_loss(input_, nega_y)
+        zero_loss = self.zero_loss(input_, zero_y)
         
-        probas = input.sigmoid()
+        probas = input_.sigmoid()
         focal_pw = (1. - probas)**self.gamma
         focal_nw = probas**self.gamma
         posi_loss = (posi_loss * posi_mask * focal_pw).sum()
         nega_loss = (nega_loss * nega_mask).sum()
         zero_loss = (zero_loss * zero_mask).sum()  # stage2ではこれをlossに加えない
         
-        if stage == 2:
-            return posi_loss + nega_loss
+        if self.stage == 2:
+            return (posi_loss + nega_loss).mean()
         else:
-            return posi_loss + nega_loss + zero_loss
+            return (posi_loss + nega_loss + zero_loss).mean()
 
 
 def focal_loss(input, target, focus=2.0, raw=True):
